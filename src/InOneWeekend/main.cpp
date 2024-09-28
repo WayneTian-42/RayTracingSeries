@@ -1,3 +1,4 @@
+#include "color.h"
 #include <iostream>
 #include <ostream>
 
@@ -23,11 +24,7 @@ int main()
             double g = j * 1.0 / (image_height - 1);
             double b = 0.0;
 
-            int ir = int(256 * r);
-            int ig = int(256 * g);
-            int ib = int(256 * b);
-
-            std::cout << ir << " " << ig << " " << ib << std::endl;
+            write_color(std::cout, color(r, g, b));
         }
     }
 
