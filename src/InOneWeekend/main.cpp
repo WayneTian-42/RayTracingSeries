@@ -4,21 +4,34 @@
 #include <iostream>
 #include <ostream>
 
-bool hit_sphere(const point3 &center, const double radius, const ray &r)
+double hit_sphere(const point3 &center, const double radius, const ray &r)
 {
     vec3 oc = center - r.origin();
     double a = dot(r.direction(), r.direction());
     double b = -2.0 * dot(r.direction(), oc);
     double c = dot(oc, oc) - radius * radius;
     double discriminant = b * b - 4 * a * c;
-    return (discriminant >= 0);
+    if (discriminant < 0)
+        return -1;
+    double sqrt_dis = std::sqrt(discriminant);
+    double t1 = (-b - sqrt_dis) / (2 * a);
+    double t2 = (-b + sqrt_dis) / (2 * a);
+    // 因为a > 0，所以t1一定小于t2，下面两行可以省略
+    // if (t1 > t2)
+    //     std::swap(t1, t2);
+    if (t1 < 0)
+        return t2;
+    else
+        return t1;
 }
 
 color ray_color(const ray &r)
 {
-    if (hit_sphere(point3(0, 0, -1), 0.5, r))
+    double st = hit_sphere(point3(0, 0, -1), 0.5, r);
+    if (st >= 0)
     {
-        return color(1.0, 0, 0);
+        vec3 normal = unit(r.at(st) - point3(0, 0, -1));
+        return 0.5 * color(normal.x() + 1, normal.y() + 1, normal.z() + 1);
     }
     vec3 unit_direction = unit(r.direction());
     double t = 0.5 * (unit_direction.y() + 1.0);
