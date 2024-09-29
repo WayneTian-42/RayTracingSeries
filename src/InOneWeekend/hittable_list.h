@@ -1,12 +1,9 @@
 #ifndef HITTABLE_LIST_H
 #define HITTABLE_LIST_H
 
+#include "global.h"
 #include "hittable.h"
-#include <memory>
 #include <vector>
-
-using std::make_shared;
-using std::shared_ptr;
 
 class hittable_list : public hittable
 {
@@ -35,7 +32,7 @@ class hittable_list : public hittable
     {
         hit_record temp_rec;
         bool hit_anything = false;
-        double closet_so_far = ray_tmax + 1;
+        double closet_so_far = ray_tmax;
 
         for (const auto &object : objects)
         {
@@ -43,7 +40,7 @@ class hittable_list : public hittable
             {
                 hit_anything = true;
                 // 只保留最近的hit记录
-                if (temp_rec.t < closet_so_far)
+                if (temp_rec.t <= closet_so_far)
                 {
                     closet_so_far = temp_rec.t;
                     rec = temp_rec;

@@ -1,19 +1,17 @@
-#include "color.h"
+#include "global.h"
 #include "hittable.h"
-#include "ray.h"
+#include "hittable_list.h"
 #include "sphere.h"
-#include "vec3.h"
+
 #include <iostream>
 #include <ostream>
 
-color ray_color(const ray &r)
+color ray_color(const ray &r, const hittable_list &world)
 {
-    sphere s(point3(0, 0, -1), 0.5);
     hit_record rec;
-    if (s.hit(r, 0, 100, rec))
+    if (world.hit(r, 0, infinity, rec))
     {
-        vec3 normal = rec.normal;
-        return 0.5 * color(normal.x() + 1, normal.y() + 1, normal.z() + 1);
+        return 0.5 * (rec.normal + color(1, 1, 1));
     }
     vec3 unit_direction = unit(r.direction());
     double t = 0.5 * (unit_direction.y() + 1.0);
@@ -32,6 +30,11 @@ int main()
 
     int image_height = int(image_width / aspect_ratio);
     image_height = (image_height <= 1) ? 1 : image_height;
+
+    // 设置场景物体
+    hittable_list world;
+    world.add(make_shared<sphere>(point3(0, 0, -1), 0.5));
+    world.add(make_shared<sphere>(point3(0, -100.5, -1), 100));
 
     // 设置viewport属性
 
@@ -79,7 +82,7 @@ int main()
 
             ray r(camera_center, ray_direction);
 
-            color pixel_color = ray_color(r);
+            color pixel_color = ray_color(r, world);
 
             write_color(std::cout, pixel_color);
         }
