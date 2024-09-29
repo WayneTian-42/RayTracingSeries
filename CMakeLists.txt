@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.1.0)
 
 project(RTWeekend LANGUAGES CXX) 
 
-set(CMAKE_CXX_STANDARD 11) 
+set(CMAKE_CXX_STANDARD 17) 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set ( SOURCE_ONE_WEEKEND
@@ -14,6 +14,7 @@ set ( SOURCE_ONE_WEEKEND
   src/InOneWeekend/vec3.h
   src/InOneWeekend/color.h
   src/InOneWeekend/ray.h
+  src/InOneWeekend/interval.h
 )
 
 include_directories(src)

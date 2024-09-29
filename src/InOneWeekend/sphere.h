@@ -11,7 +11,7 @@ class sphere : public hittable
     {
     }
 
-    bool hit(const ray &r, double ray_tmin, double ray_tmax, hit_record &rec) const override
+    bool hit(const ray &r, interval ray_t, hit_record &rec) const override
     {
         vec3 oc = center - r.origin();
         double a = r.direction().length_squared();
@@ -28,10 +28,10 @@ class sphere : public hittable
 
         // 只使用一个变量记录根
         // ray_tmax <= root这种情况会发生吗？个人觉得不会，因为a恒正
-        if (root <= ray_tmin || ray_tmax <= root)
+        if (!ray_t.contains(root))
         {
             root = (h + sqrt_dis) / a;
-            if (root <= ray_tmin || ray_tmax <= root)
+            if (!ray_t.contains(root))
                 return false;
         }
 

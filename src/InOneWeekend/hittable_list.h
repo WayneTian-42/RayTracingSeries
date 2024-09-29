@@ -3,6 +3,7 @@
 
 #include "global.h"
 #include "hittable.h"
+#include "interval.h"
 #include <vector>
 
 class hittable_list : public hittable
@@ -28,23 +29,20 @@ class hittable_list : public hittable
         objects.push_back(object);
     }
 
-    bool hit(const ray &r, double ray_tmin, double ray_tmax, hit_record &rec) const override
+    bool hit(const ray &r, interval ray_t, hit_record &rec) const override
     {
         hit_record temp_rec;
         bool hit_anything = false;
-        double closet_so_far = ray_tmax;
+        double closet_so_far = ray_t.max;
 
         for (const auto &object : objects)
         {
-            if (object->hit(r, ray_tmin, ray_tmax, temp_rec))
+            // 只保留最近的hit记录
+            if (object->hit(r, interval(ray_t.min, closet_so_far), temp_rec))
             {
                 hit_anything = true;
-                // 只保留最近的hit记录
-                if (temp_rec.t <= closet_so_far)
-                {
-                    closet_so_far = temp_rec.t;
-                    rec = temp_rec;
-                }
+                closet_so_far = temp_rec.t;
+                rec = temp_rec;
             }
         }
 
