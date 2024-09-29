@@ -1,37 +1,18 @@
 #include "color.h"
+#include "hittable.h"
 #include "ray.h"
+#include "sphere.h"
 #include "vec3.h"
 #include <iostream>
 #include <ostream>
 
-double hit_sphere(const point3 &center, const double radius, const ray &r)
-{
-    vec3 oc = center - r.origin();
-    double a = r.direction().length_squared();
-    // double b = -2.0 * dot(r.direction(), oc);
-    double h = dot(r.direction(), oc);
-    double c = oc.length_squared() - radius * radius;
-    double discriminant = h * h - a * c;
-    if (discriminant < 0)
-        return -1;
-    double sqrt_dis = std::sqrt(discriminant);
-    double t1 = (h - sqrt_dis) / a;
-    double t2 = (h + sqrt_dis) / a;
-    // 因为a > 0，所以t1一定小于t2，下面两行可以省略
-    // if (t1 > t2)
-    //     std::swap(t1, t2);
-    if (t1 < 0)
-        return t2;
-    else
-        return t1;
-}
-
 color ray_color(const ray &r)
 {
-    double st = hit_sphere(point3(0, 0, -1), 0.5, r);
-    if (st >= 0)
+    sphere s(point3(0, 0, -1), 0.5);
+    hit_record rec;
+    if (s.hit(r, 0, 100, rec))
     {
-        vec3 normal = unit(r.at(st) - point3(0, 0, -1));
+        vec3 normal = rec.normal;
         return 0.5 * color(normal.x() + 1, normal.y() + 1, normal.z() + 1);
     }
     vec3 unit_direction = unit(r.direction());
