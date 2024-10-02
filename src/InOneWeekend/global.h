@@ -41,7 +41,4 @@ inline double random_double(double min, double max)
 
 // Common Headers
 
-#include "ray.h"
-#include "vec3.h"
-
 #endif // !GLOBAL_H

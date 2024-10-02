@@ -1,7 +1,6 @@
 #ifndef SPHERE_H
 #define SPHERE_H
 
-#include "global.h"
 #include "hittable.h"
 
 class sphere : public hittable
@@ -27,11 +26,13 @@ class sphere : public hittable
         double root = (h - sqrt_dis) / a;
 
         // 只使用一个变量记录根
-        // ray_tmax <= root这种情况会发生吗？个人觉得不会，因为a恒正
-        if (!ray_t.contains(root))
+        // ray_tmax < root这种情况会发生吗？个人觉得不会，因为a恒正
+        //! 注意，不能使用contains，必须用surrounds，因为交点必须在(0,
+        //! +infity)之间，不能等于二者任何一个，否则在求交点时会无限递归
+        if (!ray_t.surrounds(root))
         {
             root = (h + sqrt_dis) / a;
-            if (!ray_t.contains(root))
+            if (!ray_t.surrounds(root))
                 return false;
         }
 

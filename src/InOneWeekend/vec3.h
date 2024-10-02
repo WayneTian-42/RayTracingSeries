@@ -1,7 +1,9 @@
 #ifndef VEC3_H
 #define VEC3_H
 
+#include "global.h"
 #include <cmath>
+#include <cstdlib>
 #include <iostream>
 #include <ostream>
 
@@ -86,6 +88,16 @@ class vec3
     {
         return std::sqrt(length_squared());
     }
+
+    static vec3 random()
+    {
+        return vec3(random_double(), random_double(), random_double());
+    }
+
+    static vec3 random(double min, double max)
+    {
+        return vec3(random_double(min, max), random_double(min, max), random_double(min, max));
+    }
 };
 
 // point3
@@ -135,6 +147,35 @@ inline vec3 cross(const vec3 &u, const vec3 &v)
 inline vec3 unit(const vec3 &u)
 {
     return u / u.length();
+}
+
+inline vec3 random_unit_vector()
+{
+    while (true)
+    {
+        point3 p = vec3::random(-1, 1);
+        double lensp = p.length_squared();
+
+        // 防止len过小，导致向量趋近于正无穷
+        // len <= 1可以去掉吗？ 不可以
+        if (1e-160 < lensp && lensp <= 1)
+        {
+            return p / sqrt(lensp);
+        }
+    }
+}
+
+inline vec3 random_on_hemisphere(const vec3 &normal)
+{
+    vec3 on_unit_sphere = random_unit_vector();
+    if (dot(on_unit_sphere, normal) > 0.0)
+    {
+        return on_unit_sphere;
+    }
+    else
+    {
+        return -on_unit_sphere;
+    }
 }
 
 #endif // !VEC3_H

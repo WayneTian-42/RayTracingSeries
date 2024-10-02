@@ -87,7 +87,12 @@ class camera
         hit_record rec;
         if (world.hit(r, interval(0, infinity), rec))
         {
-            return 0.5 * (rec.normal + color(1, 1, 1));
+            // return 0.5 * (rec.normal + vec3(1, 1, 1));
+            // 生成反射光线的方向
+            vec3 direction = random_on_hemisphere(rec.normal);
+            // 吸收周围颜色的50%，反射剩余的50%，呈现一种灰色
+            // 此处0.5与之前不同，之前是为了保证颜色取值在[0, 1]之间
+            return 0.5 * ray_color(ray(rec.p, direction), world);
         }
         vec3 unit_direction = unit(r.direction());
         double t = 0.5 * (unit_direction.y() + 1.0);
