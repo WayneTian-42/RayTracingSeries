@@ -12,6 +12,7 @@ class camera
     double aspect_ratio = 1.0;  // 默认宽高比
     int image_width = 100;      // 默认图片宽度为100像素
     int samples_per_pixel = 10; // 每个像素采样次数
+    int max_depth = 10;         // 每次递归最大深度
 
     void render(const hittable &world)
     {
@@ -30,7 +31,7 @@ class camera
                 for (int k = 0; k < samples_per_pixel; ++k)
                 {
                     ray r = get_ray(i, j);
-                    pixel_color += ray_color(r, world);
+                    pixel_color += ray_color(r, max_depth, world);
                 }
 
                 write_color(std::cout, pixel_color * pixel_sample_scale);
@@ -82,17 +83,20 @@ class camera
         pixel00_loc = viewport_upper_left + pixel_delta_u / 2 + pixel_delta_v / 2;
     }
 
-    color ray_color(const ray &r, const hittable &world) const
+    color ray_color(const ray &r, int depth, const hittable &world) const
     {
+        if (depth <= 0)
+            return color(0, 0, 0);
         hit_record rec;
-        if (world.hit(r, interval(0, infinity), rec))
+        if (world.hit(r, interval(0.001, infinity), rec))
         {
             // return 0.5 * (rec.normal + vec3(1, 1, 1));
             // 生成反射光线的方向
-            vec3 direction = random_on_hemisphere(rec.normal);
+            // vec3 direction = random_on_hemisphere(rec.normal);
+            vec3 direction = rec.normal + random_unit_vector();
             // 吸收周围颜色的50%，反射剩余的50%，呈现一种灰色
             // 此处0.5与之前不同，之前是为了保证颜色取值在[0, 1]之间
-            return 0.5 * ray_color(ray(rec.p, direction), world);
+            return 0.5 * ray_color(ray(rec.p, direction), depth - 1, world);
         }
         vec3 unit_direction = unit(r.direction());
         double t = 0.5 * (unit_direction.y() + 1.0);
