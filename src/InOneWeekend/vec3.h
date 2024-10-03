@@ -89,6 +89,12 @@ class vec3
         return std::sqrt(length_squared());
     }
 
+    bool near_zero() const
+    {
+        double s = 1e-8;
+        return (std::fabs(e[0] < s)) && (std::fabs(e[1] < s)) && (std::fabs(e[2] < s));
+    }
+
     static vec3 random()
     {
         return vec3(random_double(), random_double(), random_double());
@@ -116,6 +122,11 @@ inline vec3 operator+(const vec3 &u, const vec3 &v)
 inline vec3 operator-(const vec3 &u, const vec3 &v)
 {
     return vec3(u.e[0] - v.e[0], u.e[1] - v.e[1], u.e[2] - v.e[2]);
+}
+
+inline vec3 operator*(const vec3 &u, const vec3 &v)
+{
+    return vec3(u.e[0] * v.e[0], u.e[1] * v.e[1], u.e[2] * v.e[2]);
 }
 
 inline vec3 operator*(const double t, const vec3 &u)
@@ -176,6 +187,18 @@ inline vec3 random_on_hemisphere(const vec3 &normal)
     {
         return -on_unit_sphere;
     }
+}
+
+/**
+ * @brief 根据入射光线和表面法线计算反射光线
+ *
+ * @param ray_in 入射光线（非单位向量）
+ * @param out_normal 法线（单位向量，指向表面外部）
+ * @return 反射光线（非单位向量）
+ */
+inline vec3 reflect(const vec3 &ray_in, const vec3 &out_normal)
+{
+    return ray_in - 2 * dot(ray_in, out_normal) * out_normal;
 }
 
 #endif // !VEC3_H

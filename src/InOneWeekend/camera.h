@@ -4,6 +4,7 @@
 #include "color.h"
 #include "global.h"
 #include "hittable.h"
+#include "material.h"
 #include "vec3.h"
 
 class camera
@@ -91,12 +92,26 @@ class camera
         if (world.hit(r, interval(0.001, infinity), rec))
         {
             // return 0.5 * (rec.normal + vec3(1, 1, 1));
+
             // 生成反射光线的方向
             // vec3 direction = random_on_hemisphere(rec.normal);
-            vec3 direction = rec.normal + random_unit_vector();
-            // 吸收周围颜色的50%，反射剩余的50%，呈现一种灰色
-            // 此处0.5与之前不同，之前是为了保证颜色取值在[0, 1]之间
-            return 0.5 * ray_color(ray(rec.p, direction), depth - 1, world);
+
+            // lambertian 模型
+            // vec3 direction = rec.normal + random_unit_vector();
+            // // 吸收周围颜色的50%，反射剩余的50%，呈现一种灰色
+            // // 此处0.5与之前不同，之前是为了保证颜色取值在[0, 1]之间
+            // return 0.5 * ray_color(ray(rec.p, direction), depth - 1, world);
+
+            // 添加材质
+            ray scattered;
+            // 此处的attenuation是衰退率，即经过反射后仍然保留的颜色所占比例，不是反射的颜色
+            // 不同材质的albedo也是反射率的含义，而非颜色
+            color attenuation;
+            if (rec.mat->scatter(r, rec, attenuation, scattered))
+            {
+                return attenuation * ray_color(scattered, depth - 1, world);
+            }
+            return color(0, 0, 0);
         }
         vec3 unit_direction = unit(r.direction());
         double t = 0.5 * (unit_direction.y() + 1.0);

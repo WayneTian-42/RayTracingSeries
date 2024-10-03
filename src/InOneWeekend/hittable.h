@@ -1,15 +1,19 @@
 #ifndef HITTABLE_H
 #define HITTABLE_H
 
+#include "global.h"
 #include "interval.h"
 #include "ray.h"
 #include "vec3.h"
+
+class material;
 
 class hit_record
 {
   public:
     point3 p;
     vec3 normal;
+    shared_ptr<material> mat;
     double t;
     // ture表示光线来自外部，false表示来自内部
     bool front_face;
