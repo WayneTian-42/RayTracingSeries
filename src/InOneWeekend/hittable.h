@@ -16,7 +16,7 @@ class hit_record
     shared_ptr<material> mat;
     double t;
     // ture表示光线来自外部，false表示来自内部
-    bool front_face;
+    bool outward;
 
     /**
      * @brief 设置交点法向量始终朝外
@@ -26,8 +26,8 @@ class hit_record
      */
     void set_face_normal(const ray &r, const vec3 &outward_normal)
     {
-        front_face = dot(r.direction(), outward_normal) < 0;
-        normal = front_face ? outward_normal : -outward_normal;
+        outward = dot(r.direction(), outward_normal) < 0;
+        normal = outward ? outward_normal : -outward_normal;
     }
 };
 

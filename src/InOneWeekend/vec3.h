@@ -196,9 +196,26 @@ inline vec3 random_on_hemisphere(const vec3 &normal)
  * @param out_normal 法线（单位向量，指向表面外部）
  * @return 反射光线（非单位向量）
  */
-inline vec3 reflect(const vec3 &ray_in, const vec3 &out_normal)
+inline vec3 reflect(const vec3 &in_dir, const vec3 &out_normal)
 {
-    return ray_in - 2 * dot(ray_in, out_normal) * out_normal;
+    return in_dir - 2 * dot(in_dir, out_normal) * out_normal;
+}
+
+/**
+ * @brief 根据入射方向和表面法线向量计算折射光线方向
+ *
+ * @param in_dir 入射方向（单位向量）
+ * @param normal 法线（单位向量，指向表面外部）
+ * @param etai_over_etat snell's law中theta / theta'的值
+ * @return 折射方向（单位向量）
+ */
+inline vec3 refract(const vec3 &in_dir, const vec3 &normal, double etai_over_etat)
+{
+    double cos_theta = std::fmin(1.0, dot(-in_dir, normal));
+    vec3 out_dir_prep = etai_over_etat * (in_dir + cos_theta * normal);
+    // 代码中sqrt内部加了fabs，个人觉得不需要，加上了代码不会崩溃，但是如果长度大于1，说明输入存在问题
+    vec3 out_dir_parallel = -std::sqrt(1 - out_dir_prep.length_squared()) * normal;
+    return out_dir_prep + out_dir_parallel;
 }
 
 #endif // !VEC3_H

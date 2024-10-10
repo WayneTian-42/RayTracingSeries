@@ -1,6 +1,7 @@
 #ifndef METAL_H
 #define METAL_H
 
+#include "InOneWeekend/ray.h"
 #include "InOneWeekend/vec3.h"
 #include "color.h"
 #include "hittable.h"
@@ -48,7 +49,9 @@ class metal : public material
 
     bool scatter(const ray &r_in, const hit_record &rec, color &attenuation, ray &scatterd) const override
     {
+        // 镜面反射
         vec3 reflected = reflect(r_in.direction(), rec.normal);
+        // 对反射进行模糊，fuzz是模糊因子
         reflected = unit(reflected) + fuzz * random_unit_vector();
         scatterd = ray(rec.p, reflected);
         attenuation = albedo;
@@ -58,6 +61,46 @@ class metal : public material
   private:
     color albedo;
     double fuzz;
+};
+
+class dielectric : public material
+{
+  public:
+    dielectric(double refraction_index) : refraction_index(refraction_index)
+    {
+    }
+
+    bool scatter(const ray &r_in, const hit_record &rec, color &attenuation, ray &scatterd) const override
+    {
+        attenuation = color(1.0, 1.0, 1.0);
+        // 根据Snell's law计算入射介质和出射介质比值
+        double r_i = rec.outward ? (1.0 / refraction_index) : refraction_index;
+
+        vec3 unit_in_dir = unit(r_in.direction());
+
+        double cos_theta = std::fmin(1.0, dot(-unit_in_dir, rec.normal));
+        double sin_theta = std::sqrt(1.0 - cos_theta * cos_theta);
+
+        bool can_refract = sin_theta * r_i <= 1.0;
+        vec3 direction;
+
+        if (can_refract)
+        {
+            direction = refract(unit_in_dir, rec.normal, r_i);
+        }
+        else
+        {
+            direction = reflect(unit_in_dir, rec.normal);
+        }
+
+        scatterd = ray(rec.p, direction);
+        return true;
+    }
+
+  private:
+    // Refractive index in vacuum or air, or the ratio of the material's refractive index over
+    // the refractive index of the enclosing media
+    double refraction_index;
 };
 
 #endif // !METAL_H
