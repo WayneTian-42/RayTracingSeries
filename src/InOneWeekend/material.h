@@ -1,10 +1,12 @@
 #ifndef METAL_H
 #define METAL_H
 
+#include "InOneWeekend/global.h"
 #include "InOneWeekend/ray.h"
 #include "InOneWeekend/vec3.h"
 #include "color.h"
 #include "hittable.h"
+#include <cmath>
 
 class material
 {
@@ -84,7 +86,7 @@ class dielectric : public material
         bool can_refract = sin_theta * r_i <= 1.0;
         vec3 direction;
 
-        if (can_refract)
+        if (can_refract && reflectance(cos_theta, r_i) <= random_double())
         {
             direction = refract(unit_in_dir, rec.normal, r_i);
         }
@@ -101,6 +103,20 @@ class dielectric : public material
     // Refractive index in vacuum or air, or the ratio of the material's refractive index over
     // the refractive index of the enclosing media
     double refraction_index;
+
+    /**
+     * @brief Schlick's approximation for reflectance
+     *
+     * @param consine
+     * @param refraction_index
+     * @return
+     */
+    static double reflectance(double consine, double refraction_index)
+    {
+        double r0 = (1 - refraction_index) / (1 + refraction_index);
+        r0 = r0 * r0;
+        return r0 + (1 - r0) * std::pow((1 - consine), 5);
+    }
 };
 
 #endif // !METAL_H
