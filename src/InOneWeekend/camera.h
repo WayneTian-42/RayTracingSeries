@@ -14,6 +14,12 @@ class camera
     int image_width = 100;      // 默认图片宽度为100像素
     int samples_per_pixel = 10; // 每个像素采样次数
     int max_depth = 10;         // 每次递归最大深度
+    double vfov = 90;           // 垂直方向的fov
+
+    point3 lookfrom = point3(0, 0, 0); // 相机所在位置
+    point3 lookat = point3(0, 0, -1);  // 相机看向的位置（确定相机朝向）
+    //! 注意：vup不是相机相对正上方，只是用来和相机看向的方向一起确定一个平面，从而计算出相机的x轴
+    vec3 vup = vec3(0, 1, 0);
 
     void render(const hittable &world)
     {
@@ -50,26 +56,36 @@ class camera
     vec3 pixel_delta_v;        // 纵向像素间隔
     double pixel_sample_scale; // 每一次采样所占比例
 
+    vec3 u, v, w; // 相机坐标系下的基向量
+
     void initialize()
     {
         image_height = int(image_width / aspect_ratio);
         image_height = (image_height < 1) ? 1 : image_height;
         pixel_sample_scale = 1.0 / samples_per_pixel;
 
-        center = point3(0, 0, 0);
-
         // 设置摄像机属性
 
-        double focal_length = 1.0;
+        center = lookfrom;
+
+        double focal_length = (lookat - lookfrom).length();
 
         // 设置viewport属性
 
-        double viewport_height = 2.0;
+        // double viewport_height = 2.0;
+        double theta = degrees_to_radians(vfov);
+        double h = std::tan(theta / 2);
+        double viewport_height = 2 * focal_length * h;
         double viewport_width = viewport_height * (double(image_width) / image_height);
 
+        // 计算相机坐标系的基向量
+        w = unit(lookfrom - lookat); // 观察方向是z轴负方向
+        u = unit(cross(vup, w));
+        v = cross(w, u);
+
         // 计算viewport的横纵方向
-        vec3 viewport_u = vec3(viewport_width, 0, 0);
-        vec3 viewport_v = vec3(0, -viewport_height, 0);
+        vec3 viewport_u = viewport_width * u;
+        vec3 viewport_v = viewport_height * -v;
 
         // vec3 pixel_delta_u = unit(viewport_u);
         // vec3 pixel_delta_v = unit(viewport_v);
@@ -80,7 +96,7 @@ class camera
         pixel_delta_v = viewport_v / image_height;
 
         // 计算viewport左上角以及第一个pixel位置
-        point3 viewport_upper_left = center - vec3(0, 0, focal_length) - viewport_u / 2 - viewport_v / 2;
+        point3 viewport_upper_left = lookat - viewport_u / 2 - viewport_v / 2;
         pixel00_loc = viewport_upper_left + pixel_delta_u / 2 + pixel_delta_v / 2;
     }
 

@@ -86,6 +86,9 @@ class dielectric : public material
         bool can_refract = sin_theta * r_i <= 1.0;
         vec3 direction;
 
+        // 使用Schlick's approximation估计反射光线所占比例
+        // 然后利用random_double模拟物理世界光线的随机反射和折射
+        // 反射光线所占比例越大，产生反射的可能性越高
         if (can_refract && reflectance(cos_theta, r_i) <= random_double())
         {
             direction = refract(unit_in_dir, rec.normal, r_i);
