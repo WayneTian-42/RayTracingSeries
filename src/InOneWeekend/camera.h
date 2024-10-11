@@ -21,6 +21,9 @@ class camera
     //! 注意：vup不是相机相对正上方，只是用来和相机看向的方向一起确定一个平面，从而计算出相机的x轴
     vec3 vup = vec3(0, 1, 0);
 
+    double defocus_angle = 0; // 光线穿过像素时角度变化范围
+    double focus_dis = 10;    // 相机到完美对焦平面的距离
+
     void render(const hittable &world)
     {
         initialize();
@@ -56,7 +59,9 @@ class camera
     vec3 pixel_delta_v;        // 纵向像素间隔
     double pixel_sample_scale; // 每一次采样所占比例
 
-    vec3 u, v, w; // 相机坐标系下的基向量
+    vec3 u, v, w;        // 相机坐标系下的基向量
+    vec3 defocus_disk_u; // 散焦时水平方向向量
+    vec3 defocus_disk_v; // 散焦时垂直方向向量
 
     void initialize()
     {
@@ -68,14 +73,14 @@ class camera
 
         center = lookfrom;
 
-        double focal_length = (lookat - lookfrom).length();
+        // double focal_length = (lookat - lookfrom).length();
 
         // 设置viewport属性
 
         // double viewport_height = 2.0;
         double theta = degrees_to_radians(vfov);
         double h = std::tan(theta / 2);
-        double viewport_height = 2 * focal_length * h;
+        double viewport_height = 2 * focus_dis * h;
         double viewport_width = viewport_height * (double(image_width) / image_height);
 
         // 计算相机坐标系的基向量
@@ -96,8 +101,13 @@ class camera
         pixel_delta_v = viewport_v / image_height;
 
         // 计算viewport左上角以及第一个pixel位置
-        point3 viewport_upper_left = lookat - viewport_u / 2 - viewport_v / 2;
+        point3 viewport_upper_left = center - focus_dis * w - viewport_u / 2 - viewport_v / 2;
         pixel00_loc = viewport_upper_left + pixel_delta_u / 2 + pixel_delta_v / 2;
+
+        // 计算相机散焦环基向量
+        double defocus_radius = focus_dis * std::tan(degrees_to_radians(defocus_angle / 2));
+        defocus_disk_u = defocus_radius * u;
+        defocus_disk_v = defocus_radius * v;
     }
 
     color ray_color(const ray &r, int depth, const hittable &world) const
@@ -141,7 +151,7 @@ class camera
         vec3 offset = sample_squre();
         point3 pixel_sample = pixel00_loc + ((i + offset.x()) * pixel_delta_u) + ((j + offset.y()) * pixel_delta_v);
 
-        point3 ray_origin = center;
+        point3 ray_origin = (defocus_angle <= 0) ? center : sample_defocus_disk();
         vec3 ray_direction = pixel_sample - ray_origin;
 
         return ray(ray_origin, ray_direction);
@@ -152,9 +162,15 @@ class camera
      *
      * @return [-0.5, -0.5]到[+0.5, +0.5]正方形区域之间的随机点
      */
-    vec3 sample_squre() const
+    point3 sample_squre() const
     {
-        return vec3(random_double() - 0.5, random_double() - 0.5, 0);
+        return point3(random_double() - 0.5, random_double() - 0.5, 0);
+    }
+
+    point3 sample_defocus_disk() const
+    {
+        point3 p = random_in_unit_disk();
+        return center + (p[0] * defocus_disk_u) + (p[1] * defocus_disk_v);
     }
 };
 
