@@ -151,7 +151,9 @@ class camera
         vec3 offset = sample_squre();
         point3 pixel_sample = pixel00_loc + ((i + offset.x()) * pixel_delta_u) + ((j + offset.y()) * pixel_delta_v);
 
+        // 根据角度判断是否焦散，不判断也可以
         point3 ray_origin = (defocus_angle <= 0) ? center : sample_defocus_disk();
+        // point3 ray_origin = sample_defocus_disk();
         vec3 ray_direction = pixel_sample - ray_origin;
 
         return ray(ray_origin, ray_direction);
