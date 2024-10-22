@@ -1,6 +1,7 @@
 #ifndef HITTABLE_LIST_H
 #define HITTABLE_LIST_H
 
+#include "NextWeek/aabb.h"
 #include "global.h"
 #include "hittable.h"
 #include "interval.h"
@@ -27,6 +28,7 @@ class hittable_list : public hittable
     void add(shared_ptr<hittable> object)
     {
         objects.push_back(object);
+        bbox = aabb(bbox, object->bounding_box());
     }
 
     bool hit(const ray &r, interval ray_t, hit_record &rec) const override
@@ -48,6 +50,14 @@ class hittable_list : public hittable
 
         return hit_anything;
     }
+
+    aabb bounding_box() const override
+    {
+        return bbox;
+    }
+
+  private:
+    aabb bbox;
 };
 
 #endif // !HITTABLE_LIST_H

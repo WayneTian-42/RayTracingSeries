@@ -1,6 +1,7 @@
 #ifndef HITTABLE_H
 #define HITTABLE_H
 
+#include "aabb.h"
 #include "global.h"
 #include "interval.h"
 #include "ray.h"
@@ -38,7 +39,7 @@ class hittable
 
     virtual bool hit(const ray &r, interval ray_t, hit_record &rec) const = 0;
 
-  private:
+    virtual aabb bounding_box() const = 0;
 };
 
 #endif // !HITTABLE_H

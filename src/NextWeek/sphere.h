@@ -13,11 +13,22 @@ class sphere : public hittable
     sphere(const point3 &static_center, double radius, shared_ptr<material> mat)
         : move(static_center, vec3(0, 0, 0)), radius(std::fmax(0, radius)), mat(mat)
     {
+        // 球体被包围在一个正方体中，rvec表示球心到正方体右上前方的顶点向量
+        vec3 rvec = vec3(radius, radius, radius);
+        bbox = aabb(static_center - rvec, static_center + rvec);
     }
 
     sphere(const point3 &start, const point3 &end, double radius, shared_ptr<material> mat)
         : move(start, end - start), radius(std::fmax(0, radius)), mat(mat)
     {
+        // 球体被包围在一个正方体中，rvec表示球心到正方体右上前方的顶点向量
+        vec3 rvec = vec3(radius, radius, radius);
+        // 计算两次球体的bbox，然后求并集
+        // aabb bbox1 = aabb(start - rvec, start + rvec);
+        // aabb bbox2 = aabb(end - rvec, end + rvec);
+        aabb bbox1 = aabb(move.at(0) - rvec, move.at(0) + rvec);
+        aabb bbox2 = aabb(move.at(1) - rvec, move.at(1) + rvec);
+        bbox = aabb(bbox1, bbox2);
     }
 
     bool hit(const ray &r, interval ray_t, hit_record &rec) const override
@@ -57,12 +68,18 @@ class sphere : public hittable
         return true;
     }
 
+    aabb bounding_box() const override
+    {
+        return bbox;
+    }
+
   private:
     // point3 center;
     // 添加运动属性
     ray move;
     double radius;
     shared_ptr<material> mat;
+    aabb bbox;
 };
 
 #endif // !SPHERE_H
