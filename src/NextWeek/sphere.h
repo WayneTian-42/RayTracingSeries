@@ -24,10 +24,10 @@ class sphere : public hittable
         // 球体被包围在一个正方体中，rvec表示球心到正方体右上前方的顶点向量
         vec3 rvec = vec3(radius, radius, radius);
         // 计算两次球体的bbox，然后求并集
-        // aabb bbox1 = aabb(start - rvec, start + rvec);
-        // aabb bbox2 = aabb(end - rvec, end + rvec);
-        aabb bbox1 = aabb(move.at(0) - rvec, move.at(0) + rvec);
-        aabb bbox2 = aabb(move.at(1) - rvec, move.at(1) + rvec);
+        aabb bbox1 = aabb(start - rvec, start + rvec);
+        aabb bbox2 = aabb(end - rvec, end + rvec);
+        // aabb bbox1 = aabb(move.at(0) - rvec, move.at(0) + rvec);
+        // aabb bbox2 = aabb(move.at(1) - rvec, move.at(1) + rvec);
         bbox = aabb(bbox1, bbox2);
     }
 

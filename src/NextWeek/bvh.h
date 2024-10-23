@@ -24,7 +24,19 @@ class bvh_node : public hittable
     {
         // 排序，构造二叉树
 
-        int axis = random_int(0, 2);
+        // int axis = random_int(0, 2);
+        //
+        // auto comparator = (axis == 0) ? box_x_compare : ((axis == 1) ? box_y_compare : box_z_compare);
+
+        bbox = aabb::empty;
+
+        for (size_t index = start; index < end; ++index)
+        {
+            bbox = aabb(bbox, objects[index]->bounding_box());
+        }
+
+        // 选取最长的轴进行切分
+        int axis = bbox.longest_axis();
 
         auto comparator = (axis == 0) ? box_x_compare : ((axis == 1) ? box_y_compare : box_z_compare);
 
@@ -48,7 +60,7 @@ class bvh_node : public hittable
             right = make_shared<bvh_node>(objects, mid, end);
         }
 
-        bbox = aabb(left->bounding_box(), right->bounding_box());
+        // bbox = aabb(left->bounding_box(), right->bounding_box());
     }
 
     bool hit(const ray &r, interval ray_t, hit_record &rec) const override
@@ -56,6 +68,7 @@ class bvh_node : public hittable
         if (!bbox.hit(r, ray_t))
             return false;
         bool hit_left = left->hit(r, ray_t, rec);
+        // 在多个相交物体中，寻找更近的交点
         bool hit_right = right->hit(r, interval(ray_t.min, hit_left ? rec.t : ray_t.max), rec);
 
         return hit_left || hit_right;
