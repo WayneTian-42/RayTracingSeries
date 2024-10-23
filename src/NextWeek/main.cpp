@@ -99,7 +99,21 @@ int main()
     auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
     world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, material3));
 
+    time_t t_start, t_stop;
+    std::time(&t_start);
+
     world = hittable_list(make_shared<bvh_node>(world));
+
+    time(&t_stop);
+    double diff = difftime(t_stop, t_start);
+    int hrs = (int)diff / 3600;
+    int mins = ((int)diff / 60) - (hrs * 60);
+    int secs = (int)diff - (hrs * 3600) - (mins * 60);
+    int mss = (int)diff - (hrs * 3600 * 1000) - (mins * 60 * 1000) - secs * 1000;
+
+    // 输出时间
+    std::clog << "\rBVH Generation complete: \nTime Taken: " << hrs << "hrs, " << mins << "mins, " << secs << "secs, "
+              << mss << "ms\n\n";
 
     camera cam;
 

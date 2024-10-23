@@ -7,7 +7,9 @@
 #include "hittable.h"
 #include "hittable_list.h"
 #include <algorithm>
+#include <cassert>
 #include <cstddef>
+#include <ctime>
 #include <iterator>
 #include <vector>
 
@@ -27,7 +29,6 @@ class bvh_node : public hittable
         // int axis = random_int(0, 2);
         //
         // auto comparator = (axis == 0) ? box_x_compare : ((axis == 1) ? box_y_compare : box_z_compare);
-
         bbox = aabb::empty;
 
         for (size_t index = start; index < end; ++index)
@@ -55,9 +56,10 @@ class bvh_node : public hittable
         {
             std::sort(std::begin(objects) + start, std::begin(objects) + end, comparator);
 
-            int mid = start + object_span / 2;
-            left = make_shared<bvh_node>(objects, start, mid);
-            right = make_shared<bvh_node>(objects, mid, end);
+            // int mid = start + object_span / 2;
+            int mid = SAHSplit(objects, start, end);
+            left = make_shared<bvh_node>(objects, start, start + mid);
+            right = make_shared<bvh_node>(objects, start + mid, end);
         }
 
         // bbox = aabb(left->bounding_box(), right->bounding_box());
@@ -104,6 +106,47 @@ class bvh_node : public hittable
     static bool box_z_compare(const shared_ptr<hittable> a, const shared_ptr<hittable> b)
     {
         return box_compare(a, b, 2);
+    }
+
+    int SAHSplit(const std::vector<shared_ptr<hittable>> &objects, int begin, int end)
+    {
+        double cost_traversal = 0.125, cost_intersect = 1;
+        size_t n = end - begin;
+        // 预先设定好划分的区域数，区域数等于n时说明每种划分都考虑
+        int area_num = n > 20 ? 20 : n;
+        if (n == 0)
+            return -1; // 边界条件检查
+
+        // 计算object的前缀和以及后缀和，后续选择分割点时只需查询即可
+        std::vector<aabb> pre(n + 1, aabb::empty), suff(n + 1, aabb::empty);
+        for (int i = begin; i < end; ++i)
+        {
+            // 当前物体在列表中的相对位置
+            int index = i - begin;
+            pre[index + 1] = aabb(pre[index], objects[i]->bounding_box());
+            // 注意如何合并bbox
+            suff[n - 1 - index] = aabb(suff[n - index], objects[n - 1 - index + begin]->bounding_box()); // 修正后缀计算
+        }
+
+        assert(pre[n].surface_area() == suff[0].surface_area());
+
+        int split_num = -1;
+        double min_cost = std::numeric_limits<double>::infinity();
+        double total_area = pre[n].surface_area();
+
+        for (int i = 0; i < area_num; ++i)
+        {
+            int index = n * (i + 1) / area_num; // 避免在第0个位置或n位置分割
+            double cost = cost_traversal + pre[index].surface_area() / total_area * cost_intersect * (index) +
+                          suff[index].surface_area() / total_area * cost_intersect * (n - index);
+            if (cost < min_cost)
+            {
+                min_cost = cost;
+                split_num = index;
+            }
+        }
+
+        return split_num;
     }
 };
 

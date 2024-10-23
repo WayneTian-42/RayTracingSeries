@@ -99,6 +99,11 @@ class aabb
             return y.size() > z.size() ? 1 : 2;
     }
 
+    int surface_area() const
+    {
+        return 2 * x.size() * y.size() + x.size() * z.size() + y.size() * z.size();
+    }
+
     static const aabb empty, universe;
 };
 
