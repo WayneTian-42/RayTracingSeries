@@ -1,6 +1,8 @@
 #ifndef TEXTURE_H
 #define TEXTURE_H
 
+#include "NextWeek/interval.h"
+#include "NextWeek/rtw_stb_image.h"
 #include "color.h"
 #include "global.h"
 #include "vec3.h"
@@ -60,6 +62,34 @@ class checker_texture : public texture
   private:
     double inv_scale;
     shared_ptr<texture> even_tex, odd_tex;
+};
+
+class image_texture : public texture
+{
+  public:
+    image_texture(const char *filename) : image(filename)
+    {
+    }
+
+    color value(double u, double v, const point3 &p) const override
+    {
+        if (image.height() <= 0)
+            return color(0, 1, 1);
+
+        u = interval(0, 1).clamp(u);
+        //! 由于v从[1, 0]表示从上到下，所以这里应该反转v
+        v = 1 - interval(0, 1).clamp(v);
+
+        int i = int(u * image.width());
+        int j = int(v * image.height());
+        auto pixel = image.pixel_data(i, j);
+
+        double color_scale = 1.0 / 255.0;
+        return color_scale * color(pixel[0], pixel[1], pixel[2]);
+    }
+
+  private:
+    rtw_image image;
 };
 
 #endif // !TEXTURE_H

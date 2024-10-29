@@ -90,8 +90,10 @@ class sphere : public hittable
         //     <1 0 0> yields <0.50 0.50>       <-1  0  0> yields <0.00 0.50>
         //     <0 1 0> yields <0.50 1.00>       < 0 -1  0> yields <0.50 0.00>
         //     <0 0 1> yields <0.25 0.50>       < 0  0 -1> yields <0.75 0.50>
+        // 这种方式计算出来的结果，u从[0, 1]表示从左到右，
+        //! v从[1,0]表示从上到下!!!
         double theta = std::acos(-p.y());
-        double phi = std::atan2(-p.z(), -p.x()) + pi;
+        double phi = std::atan2(-p.z(), p.x()) + pi;
 
         u = phi / (2 * pi);
         v = theta / pi;
