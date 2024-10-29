@@ -18,6 +18,8 @@ class hit_record
     double t;
     // ture表示光线来自外部，false表示来自内部
     bool outward;
+    // 纹理坐标
+    double u, v;
 
     /**
      * @brief 设置交点法向量始终朝外
