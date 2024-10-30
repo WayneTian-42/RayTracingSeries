@@ -2,6 +2,7 @@
 #define TEXTURE_H
 
 #include "NextWeek/interval.h"
+#include "NextWeek/perlin.h"
 #include "NextWeek/rtw_stb_image.h"
 #include "color.h"
 #include "global.h"
@@ -90,6 +91,21 @@ class image_texture : public texture
 
   private:
     rtw_image image;
+};
+
+class noise_texture : public texture
+{
+  public:
+    noise_texture()
+    {
+    }
+    color value(double u, double v, const point3 &p) const override
+    {
+        return color(1, 1, 1) * noise.noise(p);
+    }
+
+  private:
+    perlin noise;
 };
 
 #endif // !TEXTURE_H
