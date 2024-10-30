@@ -7,6 +7,7 @@
 #include "color.h"
 #include "global.h"
 #include "vec3.h"
+#include <cmath>
 
 class texture
 {
@@ -101,7 +102,8 @@ class noise_texture : public texture
     }
     color value(double u, double v, const point3 &p) const override
     {
-        return color(1, 1, 1) * 0.5 * (1.0 + noise.noise(scale * p));
+        // return color(1, 1, 1) * 0.5 * (noise.turb(p, 7));
+        return color(1, 1, 1) * 0.5 * (1.0 + std::sin(scale * p.z() + 10 * noise.turb(p, 7)));
     }
 
   private:

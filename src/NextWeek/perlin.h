@@ -52,6 +52,22 @@ class perlin
         return perlin_interp(c, u, v, w);
     }
 
+    double turb(const point3 &p, int depth) const
+    {
+        double accum = 0.0;
+        point3 tmp_p = p;
+        double weight = 1.0;
+
+        for (int i = 0; i < depth; ++i)
+        {
+            accum += weight * noise(tmp_p);
+            tmp_p *= 2;
+            weight *= 0.5;
+        }
+
+        return std::fabs(accum);
+    }
+
   private:
     static const int point_count = 256;
     // double randfloat[point_count];
