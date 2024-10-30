@@ -12,7 +12,7 @@ class perlin
     {
         for (int i = 0; i < point_count; ++i)
         {
-            randfloat[i] = random_double();
+            randvec[i] = random_unit_vector();
         }
 
         perlin_generate_perm(perm_x);
@@ -26,11 +26,17 @@ class perlin
         double v = p.y() - std::floor(p.y());
         double w = p.z() - std::floor(p.z());
 
+        // Hermite cubic
+
+        // u = u * u * (3 - 2 * u);
+        // v = v * v * (3 - 2 * v);
+        // w = w * w * (3 - 2 * w);
+
         int i = int(std::floor(p.x()));
         int j = int(std::floor(p.y()));
         int k = int(std::floor(p.z()));
 
-        double c[2][2][2];
+        vec3 c[2][2][2];
 
         for (int di = 0; di < 2; ++di)
         {
@@ -38,17 +44,18 @@ class perlin
             {
                 for (int dk = 0; dk < 2; ++dk)
                 {
-                    c[di][dj][dk] = randfloat[perm_x[(i + di) & 255] ^ perm_y[(j + dj) & 255] ^ perm_z[(k + dk) & 255]];
+                    c[di][dj][dk] = randvec[perm_x[(i + di) & 255] ^ perm_y[(j + dj) & 255] ^ perm_z[(k + dk) & 255]];
                 }
             }
         }
 
-        return trilinear_interp(c, u, v, w);
+        return perlin_interp(c, u, v, w);
     }
 
   private:
     static const int point_count = 256;
-    double randfloat[point_count];
+    // double randfloat[point_count];
+    vec3 randvec[point_count];
     int perm_x[point_count];
     int perm_y[point_count];
     int perm_z[point_count];
@@ -70,6 +77,15 @@ class perlin
         }
     }
 
+    /**
+     * @brief 三线性插值
+     *
+     * @param c 立方体
+     * @param u x轴权重
+     * @param v y轴权重
+     * @param w z轴权重
+     * @return 插值结果
+     */
     static double trilinear_interp(double c[2][2][2], double u, double v, double w)
     {
         double accum = 0.0;
@@ -84,6 +100,39 @@ class perlin
                 }
             }
         }
+        return accum;
+    }
+
+    static double fade(double x)
+    {
+        // 初始的缓和曲线计算方法，一阶导连续
+        // return x * x * (3 - 2 * x);
+        // 二阶导连续，可以用于位移贴图等场景
+        return x * x * x * (10 - 15 * x + 6 * x * x);
+    }
+
+    static double perlin_interp(vec3 c[2][2][2], double u, double v, double w)
+    {
+        double accum = 0.0;
+
+        double uu = fade(u);
+        double vv = fade(v);
+        double ww = fade(w);
+
+        for (int i = 0; i < 2; ++i)
+        {
+            for (int j = 0; j < 2; ++j)
+            {
+                for (int k = 0; k < 2; ++k)
+                {
+                    vec3 p(u - i, v - j, w - k);
+                    accum += (i * uu + (1 - i) * (1 - uu)) * (j * vv + (1 - j) * (1 - vv)) *
+                             (k * ww + (1 - k) * (1 - ww)) * dot(c[i][j][k], p);
+                }
+            }
+        }
+
+        // 返回值可能是负数
         return accum;
     }
 };

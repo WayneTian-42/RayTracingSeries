@@ -169,6 +169,7 @@ inline vec3 random_unit_vector()
 
         // 防止len过小，导致向量趋近于正无穷
         // len <= 1可以去掉吗？ 不可以
+        // 保证是在单位球内随机生成向量，而不是单位立方体
         if (1e-160 < lensp && lensp <= 1)
         {
             return p / sqrt(lensp);
