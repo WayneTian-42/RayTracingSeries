@@ -1,5 +1,5 @@
 build/
 .clangd
 .cache/
-src/NextWeek/external
+src/NextWeek/external/*
 !src/NextWeek/external/stb/stb_image.h
