@@ -1,6 +1,7 @@
 #ifndef INTERVAL_H
 #define INTERVAL_H
 
+#include "NextWeek/vec3.h"
 #include "global.h"
 
 class interval
@@ -58,5 +59,15 @@ class interval
 
 inline const interval interval::empty = interval(+infinity, -infinity);
 inline const interval interval::universe = interval(-infinity, +infinity);
+
+inline interval operator+(const interval &in, double displacement)
+{
+    return interval(in.min + displacement, in.max + displacement);
+}
+
+inline interval operator+(double displacement, const interval &in)
+{
+    return in + displacement;
+}
 
 #endif // !INTERVAL_H
