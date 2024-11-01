@@ -150,4 +150,26 @@ class diffuse_light : public material
     shared_ptr<texture> tex;
 };
 
+class isotropic : public material
+{
+  public:
+    isotropic(shared_ptr<texture> tex) : tex(tex)
+    {
+    }
+
+    isotropic(const color &albedo) : tex(make_shared<solid_color>(albedo))
+    {
+    }
+
+    bool scatter(const ray &r_in, const hit_record &rec, color &attenuation, ray &scatterd) const override
+    {
+        scatterd = ray(rec.p, random_unit_vector(), r_in.time());
+        attenuation = tex->value(rec.u, rec.v, rec.p);
+        return true;
+    }
+
+  private:
+    shared_ptr<texture> tex;
+};
+
 #endif // !METAL_H
