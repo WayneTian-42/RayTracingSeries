@@ -3,11 +3,13 @@
 
 #include "NextWeek/aabb.h"
 #include "NextWeek/global.h"
+#include "NextWeek/hittable_list.h"
 #include "NextWeek/interval.h"
 #include "NextWeek/material.h"
 #include "NextWeek/vec3.h"
 #include "hittable.h"
 #include <cmath>
+#include <memory>
 
 class quad : public hittable
 {
@@ -85,5 +87,26 @@ class quad : public hittable
     shared_ptr<material> mat;
     aabb bbox;
 };
+
+inline shared_ptr<hittable_list> box(const point3 &a, const point3 &b, shared_ptr<material> mat)
+{
+    auto sides = make_shared<hittable_list>();
+
+    point3 min = point3(std::min(a.x(), b.x()), std::min(a.y(), b.y()), std::min(a.z(), b.z()));
+    point3 max = point3(std::max(a.x(), b.x()), std::max(a.y(), b.y()), std::max(a.z(), b.z()));
+
+    vec3 dx = vec3((max.x() - min.x()), 0, 0);
+    vec3 dy = vec3(0, (max.y() - min.y()), 0);
+    vec3 dz = vec3(0, 0, (max.z() - min.z()));
+
+    sides->add(make_shared<quad>(point3(min.x(), min.y(), max.z()), dx, dy, mat));  // front，z轴最大，距离摄像机最近的面
+    sides->add(make_shared<quad>(point3(max.x(), min.y(), max.z()), -dz, dy, mat)); // right
+    sides->add(make_shared<quad>(point3(max.x(), min.y(), min.z()), -dx, dy, mat)); // back
+    sides->add(make_shared<quad>(point3(min.x(), min.y(), min.z()), dz, dy, mat));  // left
+    sides->add(make_shared<quad>(point3(min.x(), max.y(), max.z()), dx, -dz, mat)); // top
+    sides->add(make_shared<quad>(point3(min.x(), min.y(), min.z()), dx, dz, mat));  // bottom
+
+    return sides;
+}
 
 #endif // !QUAD_H
