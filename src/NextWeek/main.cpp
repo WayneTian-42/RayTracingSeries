@@ -406,17 +406,22 @@ void final_scene(int image_width, int samples_per_pixel, int max_depth)
     auto light = make_shared<diffuse_light>(color(7, 7, 7));
     world.add(make_shared<quad>(point3(123, 554, 147), vec3(300, 0, 0), vec3(0, 0, 265), light));
 
+    // 运动的球
     auto center1 = point3(400, 400, 200);
     auto center2 = center1 + vec3(30, 0, 0);
     auto sphere_material = make_shared<lambertian>(color(0.7, 0.3, 0.1));
     world.add(make_shared<sphere>(center1, center2, 50, sphere_material));
 
+    // 中间玻璃
     world.add(make_shared<sphere>(point3(260, 150, 45), 50, make_shared<dielectric>(1.5)));
+    // 右侧金属
     world.add(make_shared<sphere>(point3(0, 150, 145), 50, make_shared<metal>(color(0.8, 0.8, 0.9), 1.0)));
 
+    // 利用玻璃+体积雾模拟次表面散射
     auto boundary = make_shared<sphere>(point3(360, 150, 145), 70, make_shared<dielectric>(1.5));
     world.add(boundary);
     world.add(make_shared<constant_medium>(boundary, 0.2, color(0.2, 0.4, 0.9)));
+    // 整个场景添加体积雾
     boundary = make_shared<sphere>(point3(0, 0, 0), 5000, make_shared<dielectric>(1.5));
     world.add(make_shared<constant_medium>(boundary, .0001, color(1, 1, 1)));
 
@@ -450,12 +455,13 @@ void final_scene(int image_width, int samples_per_pixel, int max_depth)
 
     cam.defocus_angle = 0;
 
+    // cam.ThreadRender(world);
     cam.render(world);
 }
 
 int main()
 {
-    switch (8)
+    switch (9)
     {
     case 1:
         bouncing_spheres();

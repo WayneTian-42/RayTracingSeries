@@ -7,7 +7,6 @@
 #include "hittable.h"
 #include "material.h"
 #include "texture.h"
-#include <memory>
 
 class constant_medium : public hittable
 {

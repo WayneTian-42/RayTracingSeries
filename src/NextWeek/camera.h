@@ -6,6 +6,10 @@
 #include "hittable.h"
 #include "material.h"
 #include "vec3.h"
+#include <atomic>
+#include <mutex>
+#include <thread>
+#include <vector>
 
 class camera
 {
@@ -51,6 +55,85 @@ class camera
 
         std::clog << "\rDone.                 " << std::endl;
     }
+    void ThreadRender(const hittable &world)
+    {
+        initialize();
+
+        std::vector<color> framebuffer(image_height * image_width);
+        std::cout << "P3" << std::endl;
+        std::cout << image_width << " " << image_height << std::endl;
+        std::cout << "255" << std::endl;
+
+        // 多线程
+        // 创建一个线程向量，用于存储所有线程
+        std::vector<std::thread> threads;
+        std::mutex mtx; // 创建互斥量
+
+        // 计算需要创建的线程数量，这里我们使用硬件并行度
+        // int hardware_concurrency = std::thread::hardware_concurrency();
+        int hardware_concurrency = 6;
+        if (hardware_concurrency <= 0)
+            hardware_concurrency = 1;
+
+        std::clog << "Threads: " << hardware_concurrency << std::endl;
+        // 每个线程计算一部分任务
+        int task_size = image_height / hardware_concurrency;
+        // int lines = 0;
+        std::atomic<int> lines(0);
+
+        for (int j = 0; j < hardware_concurrency; ++j)
+        {
+            // 计算线程应该开始和结束的索引
+            int start = j * task_size;
+            int end = std::min(image_height, (j + 1) * task_size);
+            // 创建线程并启动
+            // threads.emplace_back([&lines, start, end, &framebuffer, &world, &mtx, this]() {
+            threads.emplace_back([start, end, this, &world]() {
+                for (int p = start; p < end; ++p)
+                {
+                    // lines++;
+                    // std::clog << "\rScanline remaining: " << (image_height - lines) << " " << std::flush;
+                    for (uint32_t q = 0; q < image_width; ++q)
+                    {
+                        for (int k = 0; k < samples_per_pixel; ++k)
+                        {
+                            ray r = get_ray(q, p);
+                            ray_color(r, max_depth, world);
+                            // framebuffer[p * image_width + q] += ray_color(r, max_depth, world);
+                        }
+                        // framebuffer[p * image_width + q] *= pixel_sample_scale;
+                    }
+                    // ++lines;
+
+                    // UpdateProgress(lines / (float)scene.height);
+                    // const auto res = scene.castRay(Ray(eye_pos, dir), 0);
+                    // framebuffer[m] += res / spp;
+                }
+            });
+        }
+        // 等待所有线程完成
+        for (auto &t : threads)
+        {
+            t.join();
+        }
+        // UpdateProgress(1.f);
+
+        for (int j = 0; j < image_height; ++j)
+        {
+            for (int i = 0; i < image_width; ++i)
+            {
+                write_color(std::cout, framebuffer[j * image_width + i]);
+            }
+        }
+    }
+
+  private:
+    // 为每个线程创建独立的缓存行对齐的buffer
+    struct alignas(64) ThreadLocalBuffer
+    {
+        std::vector<color> local_buffer;
+        char padding[64 - sizeof(std::vector<color>) % 64];
+    };
 
   private:
     int image_height;          // 图片高度
