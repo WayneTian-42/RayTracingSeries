@@ -15,6 +15,7 @@ class camera
     int samples_per_pixel = 10; // 每个像素采样次数
     int max_depth = 10;         // 每次递归最大深度
     double vfov = 90;           // 垂直方向的fov
+    color background;           // 场景背景颜色，默认是黑色
 
     point3 lookfrom = point3(0, 0, 0); // 相机所在位置
     point3 lookat = point3(0, 0, -1);  // 相机看向的位置（确定相机朝向）
@@ -133,17 +134,27 @@ class camera
             // 此处的attenuation是衰退率，即经过反射后仍然保留的颜色所占比例，不是反射的颜色
             // 不同材质的albedo也是反射率的含义，而非颜色
             color attenuation;
+
+            // 自发光
+            color color_from_emission = rec.mat->emitted(rec.u, rec.v, rec.p);
+
             if (rec.mat->scatter(r, rec, attenuation, scattered))
             {
-                return attenuation * ray_color(scattered, depth - 1, world);
+                // 反射光
+                color color_from_scatter = attenuation * ray_color(scattered, depth - 1, world);
+                return color_from_emission + color_from_scatter;
             }
-            return color(0, 0, 0);
+            return color_from_emission;
         }
-        vec3 unit_direction = unit(r.direction());
-        double t = 0.5 * (unit_direction.y() + 1.0);
-        color start_color = color(1.0, 1.0, 1.0);
-        color end_color = color(0.5, 0.7, 1.0);
-        return (1.0 - t) * start_color + t * end_color;
+        // 天空颜色
+        // vec3 unit_direction = unit(r.direction());
+        // double t = 0.5 * (unit_direction.y() + 1.0);
+        // color start_color = color(1.0, 1.0, 1.0);
+        // color end_color = color(0.5, 0.7, 1.0);
+        // return (1.0 - t) * start_color + t * end_color;
+
+        // 背景颜色
+        return background;
     }
 
     ray get_ray(int i, int j)
