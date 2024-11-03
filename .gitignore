@@ -1,7 +1,13 @@
 build/
 .clangd
 .cache/
+*.out
 src/NextWeek/external/*
 !src/NextWeek/external/stb
 src/NextWeek/external/stb/*
 !src/NextWeek/external/stb/stb_image.h
+callgrind*
+analysis*
+*.data
+*.bak
+*.old

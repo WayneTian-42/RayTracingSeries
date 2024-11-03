@@ -56,8 +56,19 @@ class hittable_list : public hittable
         return bbox;
     }
 
+    int size() const
+    {
+        return objects.size();
+    }
+
+    std::vector<shared_ptr<hittable>> get_objects() const
+    {
+        return objects;
+    }
+
   private:
     aabb bbox;
+    // std::vector<shared_ptr<hittable>> objects;
 };
 
 #endif // !HITTABLE_LIST_H

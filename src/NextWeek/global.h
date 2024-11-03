@@ -2,15 +2,23 @@
 #define GLOBAL_H
 
 #include <cmath>
+#include <cstddef>
 #include <cstdlib>
+#include <ctime>
 #include <iostream>
 #include <limits>
 #include <memory>
+#include <mutex>
+#include <random>
 
 // C++ Std Usings
 
 using std::make_shared;
 using std::shared_ptr;
+
+// Initialize the thread-local RNG and distribution
+static thread_local std::mt19937 rng(std::random_device{}());
+static std::uniform_real_distribution<double> distribution(0.0, 1.0);
 
 // Constants
 
@@ -31,7 +39,8 @@ inline double degrees_to_radians(double degree)
  */
 inline double random_double()
 {
-    return std::rand() / (RAND_MAX + 1.0);
+    return std::uniform_real_distribution<double>(0.0, 1.0)(rng);
+    // return rand_r(NULL) / (RAND_MAX + 1.0);
 }
 
 inline double random_double(double min, double max)

@@ -56,7 +56,7 @@ class bvh_node : public hittable
         {
             std::sort(std::begin(objects) + start, std::begin(objects) + end, comparator);
 
-            // int mid = start + object_span / 2;
+            // int mid = object_span / 2;
             int mid = SAHSplit(objects, start, end);
             left = make_shared<bvh_node>(objects, start, start + mid);
             right = make_shared<bvh_node>(objects, start + mid, end);
@@ -113,7 +113,8 @@ class bvh_node : public hittable
         double cost_traversal = 0.125, cost_intersect = 1;
         size_t n = end - begin;
         // 预先设定好划分的区域数，区域数等于n时说明每种划分都考虑
-        int area_num = n > 20 ? 20 : n;
+        // int area_num = n > 20 ? 20 : n;
+        int area_num = n;
         if (n == 0)
             return -1; // 边界条件检查
 

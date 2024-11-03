@@ -1,17 +1,22 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
+#include "NextWeek/dynamic_thread_pool.h"
 #include "color.h"
 #include "global.h"
 #include "hittable.h"
 #include "material.h"
 #include "vec3.h"
+#include <algorithm>
 #include <atomic>
+#include <memory>
 #include <mutex>
+#include <optional>
+#include <queue>
 #include <thread>
 #include <vector>
-
 class camera
+
 {
   public:
     double aspect_ratio = 1.0;  // 默认宽高比
@@ -33,6 +38,7 @@ class camera
     {
         initialize();
 
+        std::vector<color> framebuffer(image_height * image_width);
         std::cout << "P3" << std::endl;
         std::cout << image_width << " " << image_height << std::endl;
         std::cout << "255" << std::endl;
@@ -49,7 +55,8 @@ class camera
                     pixel_color += ray_color(r, max_depth, world);
                 }
 
-                write_color(std::cout, pixel_color * pixel_sample_scale);
+                framebuffer[j * image_width + i] = pixel_color * pixel_sample_scale;
+                // write_color(std::cout, pixel_color * pixel_sample_scale);
             }
         }
 
@@ -66,12 +73,16 @@ class camera
 
         // 多线程
         // 创建一个线程向量，用于存储所有线程
-        std::vector<std::thread> threads;
+        // std::vector<std::thread> threads(hardware_concurrency);
         std::mutex mtx; // 创建互斥量
 
         // 计算需要创建的线程数量，这里我们使用硬件并行度
-        // int hardware_concurrency = std::thread::hardware_concurrency();
-        int hardware_concurrency = 6;
+        int hardware_concurrency = std::thread::hardware_concurrency();
+        // int hardware_concurrency = 1;
+        // std::vector<std::unique_ptr<std::thread>> threads(hardware_concurrency);
+        std::vector<std::optional<std::thread>> threads(hardware_concurrency);
+        // threads.reserve(hardware_concurrency);
+        // threads.resize(hardware_concurrency);
         if (hardware_concurrency <= 0)
             hardware_concurrency = 1;
 
@@ -85,39 +96,116 @@ class camera
         {
             // 计算线程应该开始和结束的索引
             int start = j * task_size;
-            int end = std::min(image_height, (j + 1) * task_size);
+            int end = (j == hardware_concurrency - 1) ? image_height : (j + 1) * task_size;
             // 创建线程并启动
-            // threads.emplace_back([&lines, start, end, &framebuffer, &world, &mtx, this]() {
-            threads.emplace_back([start, end, this, &world]() {
+            threads[j].emplace([start, end, this, &world, &framebuffer, &lines]() {
                 for (int p = start; p < end; ++p)
                 {
                     // lines++;
                     // std::clog << "\rScanline remaining: " << (image_height - lines) << " " << std::flush;
                     for (uint32_t q = 0; q < image_width; ++q)
                     {
+                        color pixel_color;
                         for (int k = 0; k < samples_per_pixel; ++k)
                         {
                             ray r = get_ray(q, p);
-                            ray_color(r, max_depth, world);
-                            // framebuffer[p * image_width + q] += ray_color(r, max_depth, world);
+                            // ray_color(r, max_depth, world);
+                            pixel_color += ray_color(r, max_depth, world);
                         }
-                        // framebuffer[p * image_width + q] *= pixel_sample_scale;
+                        framebuffer[p * image_width + q] = pixel_color * pixel_sample_scale;
                     }
-                    // ++lines;
-
-                    // UpdateProgress(lines / (float)scene.height);
-                    // const auto res = scene.castRay(Ray(eye_pos, dir), 0);
-                    // framebuffer[m] += res / spp;
                 }
             });
         }
         // 等待所有线程完成
         for (auto &t : threads)
         {
-            t.join();
+            t->join();
         }
-        // UpdateProgress(1.f);
 
+        std::clog << "\rDone.                 " << std::endl;
+        for (int j = 0; j < image_height; ++j)
+        {
+            for (int i = 0; i < image_width; ++i)
+            {
+                write_color(std::cout, framebuffer[j * image_width + i]);
+            }
+        }
+    }
+
+    void ThreadRender2(const hittable &world)
+    {
+        initialize();
+
+        std::vector<color> framebuffer(image_height * image_width);
+
+        std::cout << "P3" << std::endl;
+        std::cout << image_width << " " << image_height << std::endl;
+        std::cout << "255" << std::endl;
+
+        std::mutex mtx; // 创建互斥量
+
+        int hardware_concurrency = std::thread::hardware_concurrency();
+        if (hardware_concurrency <= 0)
+            hardware_concurrency = 1;
+
+        std::clog << "Threads: " << hardware_concurrency << std::endl;
+
+        std::atomic<int> lines(0);
+        DynamicThreadPool thread_pool(hardware_concurrency);
+        std::vector<std::future<void>> futures;
+
+        // 设置一个合适的任务块大小（例如一次处理10行）
+        // int chunk_size = std::max(image_height / (4 * hardware_concurrency), 1);
+        int chunk_size = 12;
+        std::clog << "Chunk size: " << chunk_size << std::endl;
+
+        auto sample_ray = [this](int start_y, int end_y, int start_x, int end_x, const hittable &world,
+                                 std::atomic<int> &lines, std::vector<color> &framebuffer) {
+            for (int y = start_y; y < end_y; ++y)
+            // for (int y = start_y; y < end_y; y += 12)
+            {
+                if (start_x == 0)
+                {
+                    // lines++;
+                    // std::clog << "\rScanline remaining: " << (image_height - lines) << " " << std::flush;
+                }
+                for (int x = start_x; x < end_x; ++x)
+                {
+                    color pixel_color;
+                    for (int k = 0; k < samples_per_pixel; ++k)
+                    {
+                        ray r = get_ray(x, y);
+                        pixel_color += ray_color(r, max_depth, world);
+                    }
+                    framebuffer[y * image_width + x] = pixel_color * pixel_sample_scale;
+                }
+            }
+        };
+
+        for (int j = 0; j < image_height; j += chunk_size)
+        // for (int j = 0; j < hardware_concurrency; ++j)
+        {
+            for (int i = 0; i < image_width; i += chunk_size)
+            // for (int i = 0; i < 1; i += chunk_size)
+            {
+
+                int end_y = std::min(j + chunk_size, image_height);
+                int end_x = std::min(i + chunk_size, image_width);
+                futures.emplace_back(thread_pool.enqueue(sample_ray, j, end_y, i, end_x, std::ref(world),
+                                                         // futures.emplace_back(thread_pool.enqueue(sample_ray, j,
+                                                         // image_height, i, image_width, std::ref(world),
+                                                         std::ref(lines), std::ref(framebuffer)));
+            }
+        }
+
+        for (auto &fut : futures)
+        {
+            fut.get();
+        }
+
+        std::clog << "\rDone.                 " << std::endl;
+        // 输出渲染的结果
         for (int j = 0; j < image_height; ++j)
         {
             for (int i = 0; i < image_width; ++i)
@@ -240,6 +328,40 @@ class camera
         return background;
     }
 
+    color ray_color2(const ray &r, int depth, const hittable &world) const
+    {
+        // 使用迭代代替递归
+        color final_color(0, 0, 0);
+        color current_attenuation(1, 1, 1);
+        ray current_ray = r;
+
+        for (int i = depth; i > 0; --i)
+        {
+            hit_record rec;
+            if (!world.hit(current_ray, interval(0.001, infinity), rec))
+                return final_color + current_attenuation * background;
+
+            color emission = rec.mat->emitted(rec.u, rec.v, rec.p);
+            final_color += current_attenuation * emission;
+
+            ray scattered;
+            color attenuation;
+            if (!rec.mat->scatter(current_ray, rec, attenuation, scattered))
+                break;
+
+            current_attenuation = current_attenuation * attenuation;
+            current_ray = scattered;
+
+            // 俄罗斯轮盘赌终止
+            float p = std::max(current_attenuation.x(), std::max(current_attenuation.y(), current_attenuation.z()));
+            if (random_double() > p)
+                break;
+            current_attenuation *= 1.0f / p;
+        }
+
+        return final_color;
+    }
+
     ray get_ray(int i, int j)
     {
         vec3 offset = sample_squre();
@@ -269,6 +391,68 @@ class camera
         point3 p = random_in_unit_disk();
         return center + (p[0] * defocus_disk_u) + (p[1] * defocus_disk_v);
     }
+
+    struct ThreadStats
+    {
+        std::atomic<uint64_t> pixels_processed{0}; // 处理的像素数
+        std::atomic<uint64_t> rays_traced{0};      // 追踪的射线数
+        std::atomic<uint64_t> compute_time_ns{0};  // 计算时间(纳秒)
+
+        // 用于存储更细粒度的时间分布
+        std::vector<uint64_t> ray_compute_times; // 每个射线的计算时间
+        std::mutex times_mutex;                  // 保护 ray_compute_times
+
+        void add_ray_time(uint64_t ns)
+        {
+            std::lock_guard<std::mutex> lock(times_mutex);
+            ray_compute_times.push_back(ns);
+        }
+    };
+
+    class PerformanceMonitor
+    {
+      public:
+        PerformanceMonitor(int num_threads) : thread_stats(num_threads)
+        {
+        }
+
+        ThreadStats &get_stats(int thread_id)
+        {
+            return thread_stats[thread_id];
+        }
+
+        void print_summary()
+        {
+            for (size_t i = 0; i < thread_stats.size(); ++i)
+            {
+                auto &stats = thread_stats[i];
+                std::cout << "\nThread " << i << " statistics:\n"
+                          << "  Pixels processed: " << stats.pixels_processed
+                          << "\n  Rays traced: " << stats.rays_traced
+                          << "\n  Total compute time: " << stats.compute_time_ns / 1e9 << "s"
+                          << "\n  Average time per ray: "
+                          << (stats.rays_traced ? (stats.compute_time_ns / stats.rays_traced) : 0) << "ns\n";
+
+                // 计算射线时间的统计信息
+                if (!stats.ray_compute_times.empty())
+                {
+                    std::vector<uint64_t> times;
+                    {
+                        std::lock_guard<std::mutex> lock(stats.times_mutex);
+                        times = stats.ray_compute_times;
+                    }
+                    std::sort(times.begin(), times.end());
+                    std::cout << "  Ray time distribution:\n"
+                              << "    Min: " << times.front() << "ns\n"
+                              << "    Max: " << times.back() << "ns\n"
+                              << "    Median: " << times[times.size() / 2] << "ns\n";
+                }
+            }
+        }
+
+      private:
+        std::vector<ThreadStats> thread_stats;
+    };
 };
 
 #endif // !CAMERA_H

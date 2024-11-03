@@ -9,7 +9,10 @@
 #include "material.h"
 #include "sphere.h"
 #include "vec3.h"
+#include <chrono>
 #include <memory>
+#include <ostream>
+#include <thread>
 
 void bouncing_spheres()
 {
@@ -139,7 +142,7 @@ void bouncing_spheres()
     cam.defocus_angle = 0.6;
     cam.focus_dis = 10.0;
 
-    cam.render(world);
+    // cam.render(world);
 }
 
 void checkered_spheres()
@@ -166,7 +169,7 @@ void checkered_spheres()
 
     cam.defocus_angle = 0;
 
-    cam.render(world);
+    // cam.render(world);
 }
 
 void earth()
@@ -190,7 +193,7 @@ void earth()
 
     cam.defocus_angle = 0;
 
-    cam.render(hittable_list(globe));
+    // cam.render(hittable_list(globe));
 }
 
 void perlin_spheres()
@@ -216,7 +219,7 @@ void perlin_spheres()
 
     cam.defocus_angle = 0;
 
-    cam.render(world);
+    // cam.render(world);
 }
 
 void quads()
@@ -252,7 +255,7 @@ void quads()
 
     cam.defocus_angle = 0;
 
-    cam.render(world);
+    // cam.render(world);
 }
 
 void simple_light()
@@ -282,7 +285,7 @@ void simple_light()
 
     cam.defocus_angle = 0;
 
-    cam.render(world);
+    // cam.render(world);
 }
 
 void cornell_box()
@@ -329,7 +332,7 @@ void cornell_box()
 
     cam.defocus_angle = 0;
 
-    cam.render(world);
+    // cam.render(world);
 }
 
 void cornell_smoke()
@@ -374,12 +377,13 @@ void cornell_smoke()
 
     cam.defocus_angle = 0;
 
-    cam.render(world);
+    // cam.render(world);
 }
 
 void final_scene(int image_width, int samples_per_pixel, int max_depth)
 {
     hittable_list boxes1;
+    hittable_list world;
     auto ground = make_shared<lambertian>(color(0.48, 0.83, 0.53));
 
     int boxes_per_side = 20;
@@ -396,14 +400,14 @@ void final_scene(int image_width, int samples_per_pixel, int max_depth)
             auto z1 = z0 + w;
 
             boxes1.add(box(point3(x0, y0, z0), point3(x1, y1, z1), ground));
+            // world.add(box(point3(x0, y0, z0), point3(x1, y1, z1), ground));
         }
     }
-
-    hittable_list world;
 
     world.add(make_shared<bvh_node>(boxes1));
 
     auto light = make_shared<diffuse_light>(color(7, 7, 7));
+    auto object = quad(point3(123, 554, 147), vec3(300, 0, 0), vec3(0, 0, 265), light);
     world.add(make_shared<quad>(point3(123, 554, 147), vec3(300, 0, 0), vec3(0, 0, 265), light));
 
     // 运动的球
@@ -436,9 +440,12 @@ void final_scene(int image_width, int samples_per_pixel, int max_depth)
     for (int j = 0; j < ns; j++)
     {
         boxes2.add(make_shared<sphere>(point3::random(0, 165), 10, white));
+        // world.add(make_shared<sphere>(point3::random(0, 165), 10, white));
     }
 
     world.add(make_shared<translate>(make_shared<rotate_y>(make_shared<bvh_node>(boxes2), 15), vec3(-100, 270, 395)));
+
+    // world = hittable_list(make_shared<bvh_node>(world));
 
     camera cam;
 
@@ -455,8 +462,11 @@ void final_scene(int image_width, int samples_per_pixel, int max_depth)
 
     cam.defocus_angle = 0;
 
+    // cam.ThreadRender(object);
+    // cam.render(object);
     // cam.ThreadRender(world);
-    cam.render(world);
+    cam.ThreadRender2(world);
+    // cam.render(world);
 }
 
 int main()
@@ -488,10 +498,13 @@ int main()
         cornell_smoke();
         break;
     case 9:
-        final_scene(400, 250, 4);
+        final_scene(400, 250, 10);
         break;
     case 10:
         final_scene(800, 10000, 40);
+        // Test t(80, 100, 4);
+        // t.ThreadTest();
+        // SingleTest(80, 100, 4);
         break;
     }
 
