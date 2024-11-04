@@ -1,11 +1,12 @@
 cmake_minimum_required(VERSION 3.9)
 
-project(RTNextWeek LANGUAGES CXX) 
+# project(RTNextWeek LANGUAGES CXX) 
+project(RTRest LANGUAGES CXX) 
 
 set(CMAKE_CXX_STANDARD 17) 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-# set(CMAKE_BUILD_TYPE "Debug")
-set(CMAKE_BUILD_TYPE "Release")
+set(CMAKE_BUILD_TYPE "Debug")
+# set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 # set(CMAKE_CXX_FLAGS "-pg")
 set(CMAKE_CXX_FLAGS "-march=native -pthread")
@@ -30,9 +31,12 @@ set(CMAKE_CXX_FLAGS "-march=native -pthread")
 #   set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 # endif()
 
-set ( SOURCE_NEXT_WEEK
-  src/NextWeek/main.cpp
-  src/NextWeek/camera.h
+# set ( SOURCE_NEXT_WEEK
+#   src/NextWeek/main.cpp
+# )
+
+set ( SOURCE_REST
+    src/Rest/main.cpp
 )
 
 include_directories(src)
@@ -46,4 +50,5 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-z,stack-size=10000000
 
 set(CMAKE_MAXIMUM_RECURSION_DEPTH 1000000)
 
-add_executable(NextWeek ${SOURCE_NEXT_WEEK})
+# add_executable(NextWeek ${SOURCE_NEXT_WEEK})
+add_executable(Rest ${SOURCE_REST})
