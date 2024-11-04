@@ -77,8 +77,8 @@ class camera
         std::mutex mtx; // 创建互斥量
 
         // 计算需要创建的线程数量，这里我们使用硬件并行度
-        int hardware_concurrency = std::thread::hardware_concurrency();
-        // int hardware_concurrency = 1;
+        // int hardware_concurrency = std::thread::hardware_concurrency();
+        int hardware_concurrency = 10;
         // std::vector<std::unique_ptr<std::thread>> threads(hardware_concurrency);
         std::vector<std::optional<std::thread>> threads(hardware_concurrency);
         // threads.reserve(hardware_concurrency);
@@ -112,7 +112,7 @@ class camera
                             // ray_color(r, max_depth, world);
                             pixel_color += ray_color(r, max_depth, world);
                         }
-                        framebuffer[p * image_width + q] = pixel_color * pixel_sample_scale;
+                        // framebuffer[p * image_width + q] = pixel_color * pixel_sample_scale;
                     }
                 }
             });
@@ -124,16 +124,21 @@ class camera
         }
 
         std::clog << "\rDone.                 " << std::endl;
-        for (int j = 0; j < image_height; ++j)
-        {
-            for (int i = 0; i < image_width; ++i)
-            {
-                write_color(std::cout, framebuffer[j * image_width + i]);
-            }
-        }
+        // for (int j = 0; j < image_height; ++j)
+        // {
+        //     for (int i = 0; i < image_width; ++i)
+        //     {
+        //         write_color(std::cout, framebuffer[j * image_width + i]);
+        //     }
+        // }
     }
 
-    void ThreadRender2(const hittable &world)
+    /**
+     * @brief 采用线程池进行多线程渲染，每个线程负责固定大小的方格区域渲染，默认是12*12的像素区域
+     *
+     * @param world
+     */
+    void ThreadPoolRender(const hittable &world, int chunk_size = 12)
     {
         initialize();
 
@@ -146,6 +151,7 @@ class camera
         std::mutex mtx; // 创建互斥量
 
         int hardware_concurrency = std::thread::hardware_concurrency();
+        // int hardware_concurrency = 10;
         if (hardware_concurrency <= 0)
             hardware_concurrency = 1;
 
@@ -157,18 +163,20 @@ class camera
 
         // 设置一个合适的任务块大小（例如一次处理10行）
         // int chunk_size = std::max(image_height / (4 * hardware_concurrency), 1);
-        int chunk_size = 12;
+        chunk_size = std::min(image_height / hardware_concurrency, chunk_size);
+        if (chunk_size <= 0)
+            chunk_size = 1;
         std::clog << "Chunk size: " << chunk_size << std::endl;
 
         auto sample_ray = [this](int start_y, int end_y, int start_x, int end_x, const hittable &world,
                                  std::atomic<int> &lines, std::vector<color> &framebuffer) {
             for (int y = start_y; y < end_y; ++y)
-            // for (int y = start_y; y < end_y; y += 12)
+            // for (int y = start_y; y < end_y; y += 10)
             {
                 if (start_x == 0)
                 {
-                    // lines++;
-                    // std::clog << "\rScanline remaining: " << (image_height - lines) << " " << std::flush;
+                    lines++;
+                    std::clog << "\rScanline remaining: " << (image_height - lines) << " " << std::flush;
                 }
                 for (int x = start_x; x < end_x; ++x)
                 {

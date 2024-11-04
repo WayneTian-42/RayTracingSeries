@@ -465,7 +465,7 @@ void final_scene(int image_width, int samples_per_pixel, int max_depth)
     // cam.ThreadRender(object);
     // cam.render(object);
     // cam.ThreadRender(world);
-    cam.ThreadRender2(world);
+    cam.ThreadPoolRender(world);
     // cam.render(world);
 }
 
@@ -498,7 +498,7 @@ int main()
         cornell_smoke();
         break;
     case 9:
-        final_scene(400, 250, 10);
+        final_scene(400, 250, 4);
         break;
     case 10:
         final_scene(800, 10000, 40);
